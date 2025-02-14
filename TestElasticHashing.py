@@ -24,6 +24,9 @@ class TestElasticHashTable(unittest.TestCase):
         for i, steps in enumerate(steps_per_insertion):
             print(f"Insertion {i + 1}: {steps} steps")
 
+        print(f"Total inserted keys: {len(self.hash_table.inserted_keys)}")
+        print(f"Final table: {self.hash_table}")
+
         # Ensure table is full
         self.assertEqual(len(self.hash_table.inserted_keys), self.n, "Table should be full")
 
@@ -38,6 +41,7 @@ class TestElasticHashTable(unittest.TestCase):
         steps = 0
         for i, array_size in enumerate(self.hash_table.arrays):
             probe_sequence = self.hash_table._probe_sequence(key, i)
+            print(f"Probing sequence for key {key} in array {i}: {probe_sequence}")
             for probe in probe_sequence:
                 steps += 1
                 if self.hash_table.table[probe] is None:
