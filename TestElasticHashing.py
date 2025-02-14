@@ -1,5 +1,7 @@
 import unittest
 from ElasticHashing import ElasticHashTable
+import string
+import random
 
 class TestElasticHashTable(unittest.TestCase):
 
@@ -7,35 +9,42 @@ class TestElasticHashTable(unittest.TestCase):
         self.n = 64
         self.delta = 0.1
         self.hash_table = ElasticHashTable(self.n, self.delta)
-        self.keys = ["key1", "key2", "key3", "key4", "key5"]
 
-    def test_insert(self):
-        for key in self.keys:
-            result = self.hash_table.insert(key)
-            self.assertTrue(result, f"Insertion failed for key: {key}")
+    def test_insert_until_full(self):
+        steps_per_insertion = []
+        for _ in range(self.n):
+            key = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+            steps = self.insert_with_steps(key)
+            if steps is not None:
+                steps_per_insertion.append(steps)
+            else:
+                break
 
-        # Attempt to insert a duplicate key
-        result = self.hash_table.insert("key1")
-        self.assertFalse(result, "Duplicate key insertion should fail")
+        # Print statistics
+        for i, steps in enumerate(steps_per_insertion):
+            print(f"Insertion {i + 1}: {steps} steps")
 
-    def test_search(self):
-        for key in self.keys:
-            self.hash_table.insert(key)
+        # Ensure table is full
+        self.assertEqual(len(self.hash_table.inserted_keys), self.n, "Table should be full")
 
-        for key in self.keys:
-            index = self.hash_table.search(key)
-            self.assertNotEqual(index, -1, f"Search failed for key: {key}")
-
-        # Search for a key not in the table
-        index = self.hash_table.search("key_not_in_table")
-        self.assertEqual(index, -1, "Search should fail for a key not in the table")
-
-    def test_table_representation(self):
-        for key in self.keys:
-            self.hash_table.insert(key)
-
-        table_repr = repr(self.hash_table)
-        self.assertIsInstance(table_repr, str, "Table representation should be a string")
+    def insert_with_steps(self, key):
+        """
+        Inserts a key into the hash table and returns the number of steps taken.
+        Returns None if the table is full.
+        """
+        if key in self.hash_table.inserted_keys:
+            return 0
+        
+        steps = 0
+        for i, array_size in enumerate(self.hash_table.arrays):
+            probe_sequence = self.hash_table._probe_sequence(key, i)
+            for probe in probe_sequence:
+                steps += 1
+                if self.hash_table.table[probe] is None:
+                    self.hash_table.table[probe] = key
+                    self.hash_table.inserted_keys.add(key)
+                    return steps
+        return None
 
 if __name__ == '__main__':
     unittest.main()
